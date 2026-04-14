@@ -1,0 +1,42 @@
+# ```bash
+# docker run -d \
+#   -p 27017:27017 \
+#   -e MONGO_INITDB_ROOT_USERNAME=admin \
+#   -e MONGO_INITDB_ROOT_PASSWORD=password \
+#   --name mongodb \
+#   --net mongo-network \
+#   --env GLIBC_TUNABLES="glibc.cpu.hwcaps=-SHSTK" \
+#   mongo
+# ```
+### 4. Start the Mongo Express container
+# ```bash
+# docker run -d \
+#   --network mongo-network \
+#   -e ME_CONFIG_MONGODB_SERVER=mongodb \
+#   -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin \
+#   -e ME_CONFIG_MONGODB_ADMINPASSWORD=password \
+#   -p 8081:8081 \
+#   --name mongo-express \
+#   mongo-express
+# ```
+
+# version: '5.1.2'    #no need for this anymore apparently
+services:
+  mongo:
+    image: mongo #need to add a space after : cuz parser is dumb asf
+    ports:
+      - 27017:27017
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - GLIBC_TUNABLES="glibc.cpu.hwcaps=-SHSTK"
+  mongo-express:
+    image: mongo-express
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password 
+    depends_on: # to make sure mongo express starts only after mongodb as it needs that
+      - mongo
