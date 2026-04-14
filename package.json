@@ -1,0 +1,26 @@
+{
+  "name": "docker-node-mongo-project",
+  "version": "1.0.0",
+  "description": "Simple user profile app with Node.js, Express, MongoDB, and Mongo Express.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "mongodb",
+    "docker",
+    "mongo-express",
+    "demo"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "body-parser": "^2.2.2",
+    "express": "^5.2.1",
+    "mongodb": "^7.1.1"
+  }
+}
