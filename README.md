@@ -1,109 +1,182 @@
 # Docker Node Mongo Demo App
 
-## Project Overview
-This is a simple profile application built with Node.js, Express, MongoDB, and Mongo Express.
+A simple user profile application built with Node.js, Express, and MongoDB, containerized with Docker.
 
-The app serves a web page at http://localhost:3000 and allows profile data to be read and updated in MongoDB.
-
-## Attribution and Project History
-This project was forked from:
-https://gitlab.com/nanuchi/techworld-js-docker-demo-app
-
-After forking, I changed a lot of things and implemented it according to latest requirements, including runtime compatibility updates and request handling improvements.
+---
 
 ## Tech Stack
-- Node.js
-- Express
+
+- Node.js + Express
 - MongoDB
 - Mongo Express
 - Docker
 
-## Docker Setup Used
-I used MongoDB and Mongo Express containers and ran them with the following steps.
+---
 
-1. Create Docker network:
+## Attribution
 
-   docker network create mongo-network
+This project was forked from:
+https://gitlab.com/nanuchi/techworld-js-docker-demo-app
 
-2. Verify the network is created:
+After forking, significant changes were made including runtime compatibility updates and request handling improvements to align with the latest Node.js and MongoDB driver requirements.
 
-   docker network ls
+---
 
-3. Start MongoDB container:
+## Docker Setup
 
-   docker run -d -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=password --name mongodb --net mongo-network --env GLIBC_TUNABLES="glibc.cpu.hwcaps=-SHSTK" mongo
+### 1. Create the Docker network
 
-4. Start Mongo Express container:
+```bash
+docker network create mongo-network
+```
 
-   docker run -d --network mongo-network -e ME_CONFIG_MONGODB_SERVER=mongo -p 8081:8081 -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin  -e ME_CONFIG_MONGODB_ADMINPASSWORD=password --name mongo-express mongo-express
+### 2. Verify the network was created
 
-5. Verify containers are created and running:
+```bash
+docker network ls
+```
 
-   docker ps
+### 3. Start the MongoDB container
 
-6. Open Mongo Express UI:
+> **Note for AMD Ryzen Zen 4/5 users:** The `GLIBC_TUNABLES` flag is required to prevent a hardware-level CET Shadow Stack crash. See [Difficulties Faced](#difficulties-faced) for details.
 
-   http://localhost:8081
+```bash
+docker run -d \
+  -p 27017:27017 \
+  -e MONGO_INITDB_ROOT_USERNAME=admin \
+  -e MONGO_INITDB_ROOT_PASSWORD=password \
+  --name mongodb \
+  --net mongo-network \
+  --env GLIBC_TUNABLES="glibc.cpu.hwcaps=-SHSTK" \
+  mongo
+```
 
-## Local App Run
-1. Install dependencies:
-   npm install
-2. Start the app:
-   npm start
-3. Open:
-   http://localhost:3000
+### 4. Start the Mongo Express container
 
-## Difficulties Faced
-### 1) Node.js and MongoDB driver compatibility issue
-The earlier code used callback-style MongoDB operations that are no longer valid in the latest mongodb Node driver versions.
+```bash
+docker run -d \
+  --network mongo-network \
+  -e ME_CONFIG_MONGODB_SERVER=mongodb \
+  -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin \
+  -e ME_CONFIG_MONGODB_ADMINPASSWORD=password \
+  -p 8081:8081 \
+  --name mongo-express \
+  mongo-express
+```
 
-This caused request failures or hanging behavior on profile endpoints, which led to a blank page in the browser.
+### 5. Verify containers are running
 
-### 2) MongoDB crash on modern Ryzen hardware (CET Shadow Stack)
-I had to use a special environment variable because of a CET Shadow Stack issue.
+```bash
+docker ps
+```
 
-What is actually happening:
-- The crash is caused by a hardware-enforced Control-flow Enforcement Technology (CET) trap, specifically AMD Shadow Stacks (user_shstk).
-- The host CPU supports user_shstk.
-- The container userland (Ubuntu 24.04) has a glibc that enables Shadow Stacks by default when the hardware supports it.
-- Around the 30-second mark, MongoDB starts background threads, and C++ coroutine context switching can trigger a Shadow Stack hardware fault.
-- Ryzen 7840HS (Zen 4) is in the affected hardware class.
-- This issue was introduced in mongod 8.0.5.
+### 6. Open Mongo Express UI
 
-Workaround used:
-- GLIBC_TUNABLES="glibc.cpu.hwcaps=-SHSTK"
+```
+http://localhost:8081
+```
 
-Reference:
-https://www.findbugzero.com/operational-defect-database/vendors/mongodb/defects/3392546
+---
 
-## Application Endpoints
-- GET / : Serves the profile page
-- GET /get-profile : Returns the current user profile JSON
-- POST /update-profile : Updates and upserts user profile JSON
-- GET /profile-picture : Serves the profile image
+## Running the App Locally
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Start the server
+
+```bash
+npm start
+```
+
+### 3. Open in browser
+
+```
+http://localhost:3000
+```
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | Serves the profile page |
+| `GET` | `/get-profile` | Returns the current user profile as JSON |
+| `POST` | `/update-profile` | Updates or upserts the user profile |
+| `GET` | `/profile-picture` | Serves the profile image |
+
+---
 
 ## Why Data Persists After Restart
-MongoDB data persists in this setup because Docker volumes are mounted to Mongo data directories.
+
+MongoDB data persists across container restarts because Docker mounts volumes to the Mongo data directory.
 
 - Stopping and starting containers does not remove container filesystems or volumes.
-- The Mongo image uses data directories that are backed by Docker volumes.
-- Even without an explicit -v flag, Docker can create anonymous volumes for image-declared volume paths.
+- Even without an explicit `-v` flag, Docker creates anonymous volumes for image-declared volume paths.
+- Data is only lost if you explicitly remove the container with its volumes.
 
-Useful checks:
+**Inspect mounts on a running container:**
 
-docker inspect mongo --format '{{range .Mounts}}{{.Type}}|{{.Name}}|{{.Source}}|{{.Destination}}{{println}}{{end}}'
+```bash
+docker inspect mongodb --format '{{range .Mounts}}{{.Type}}|{{.Name}}|{{.Source}}|{{.Destination}}{{println}}{{end}}'
+```
 
+**List all Docker volumes:**
+
+```bash
 docker volume ls
+```
 
-Data is removed only if you remove the container with attached volumes, or delete those volumes explicitly.
+**Remove a container and its data:**
 
-Example:
+```bash
+docker rm -v mongodb
+```
 
-docker rm -v mongo
+**Remove a named volume explicitly:**
 
-or
-
+```bash
 docker volume rm <volume-name>
+```
+
+---
+
+## Difficulties Faced
+
+### 1. MongoDB driver compatibility
+
+The original code used callback-style MongoDB operations that are no longer valid in the latest `mongodb` Node.js driver (v4+). This caused requests to hang or fail silently, resulting in a blank page in the browser. All MongoDB operations were updated to use the current driver API.
+
+### 2. MongoDB crash on modern Ryzen hardware (CET Shadow Stack)
+
+MongoDB 8.0.5 and above crash with exit code `139` (SIGSEGV) on AMD Zen 4/5 CPUs approximately 30 seconds after startup.
+
+**Root cause:**
+
+- AMD Zen 4/5 CPUs support hardware-enforced Control-flow Enforcement Technology (CET), specifically Shadow Stacks (`user_shstk`).
+- Ubuntu 24.04's glibc enables Shadow Stacks by default when the hardware supports it.
+- MongoDB uses C++ coroutines that perform stack pivoting during context switches.
+- The CPU interprets this as a Return-Oriented Programming (ROP) attack and raises a hardware SIGSEGV.
+- Because the crash handler itself uses the stack, it double-faults and produces no stack trace — the process simply vanishes silently.
+- This issue was introduced in `mongod 8.0.5`.
+
+**Workaround:**
+
+Pass the following environment variable when starting the MongoDB container to disable Shadow Stack enforcement in glibc:
+
+```bash
+--env GLIBC_TUNABLES="glibc.cpu.hwcaps=-SHSTK"
+```
+
+**Reference:** https://www.findbugzero.com/operational-defect-database/vendors/mongodb/defects/3392546
+
+---
 
 ## Notes
-If you use a different MongoDB container name than the server value configured for Mongo Express, update the ME_CONFIG_MONGODB_SERVER value to match your MongoDB container name on the same Docker network.
+
+- If you use a MongoDB container name other than `mongodb`, update the `ME_CONFIG_MONGODB_SERVER` value in the Mongo Express run command to match the container name on the same Docker network.
+- The Mongo Express web UI uses its own Basic Auth credentials (default: `admin` / `pass`), which are separate from the MongoDB database credentials.
