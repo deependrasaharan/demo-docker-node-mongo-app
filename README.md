@@ -6,6 +6,38 @@ A simple user profile application built with Node.js, Express, and MongoDB, cont
 
 ---
 
+## Table of Contents
+
+- [Tech Stack](#tech-stack)
+- [Attribution](#attribution)
+- [Project Structure](#project-structure)
+- [Environment Variables Setup](#environment-variables-setup)
+- [API Endpoints](#api-endpoints)
+- [Method 1: Running with Docker Compose (Recommended)](#method-1-running-with-docker-compose-recommended)
+  - [Option A: Using the ECR image](#option-a-using-the-ecr-image-requires-aws-setup)
+  - [Option B: Running locally without a private registry](#option-b-running-locally-without-a-private-registry)
+  - [Starting and Stopping](#starting-and-stopping)
+  - [Data Persistence with Docker Compose](#data-persistence-with-docker-compose)
+- [Method 2: Running with Individual Docker Commands](#method-2-running-with-individual-docker-commands)
+- [AWS ECR Setup](#aws-ecr-setup)
+  - [1. Install AWS CLI v2](#1-install-aws-cli-v2)
+  - [2. Create a Scoped IAM User](#2-create-a-scoped-iam-user-in-aws-console)
+  - [3. Configure AWS CLI Region](#3-configure-aws-cli-region)
+  - [4. Authenticate with aws login](#4-authenticate-with-aws-login)
+  - [5. Fix Docker Credentials Warning](#5-fix-the-docker-unencrypted-credentials-warning)
+  - [6. Create an ECR Repository](#6-create-an-ecr-repository)
+  - [7. Authenticate Docker to ECR](#7-authenticate-docker-to-ecr)
+  - [8. Build, Tag, and Push](#8-build-tag-and-push-an-image)
+  - [9. Pull an Image](#9-pull-an-image-from-ecr)
+  - [10. List Images](#10-list-images-in-your-ecr-repository)
+- [Difficulties Faced](#difficulties-faced)
+  - [1. MongoDB driver compatibility](#1-mongodb-driver-compatibility)
+  - [2. MongoDB crash on Ryzen Zen 4/5 (CET Shadow Stack)](#2-mongodb-crash-on-modern-ryzen-hardware-cet-shadow-stack)
+  - [3. Accidentally committed AWS account ID](#3-accidentally-committed-aws-account-id-to-git-history)
+  - [4. Docker data filling root partition](#4-docker-data-filling-root-partition)
+
+---
+
 ## Tech Stack
 
 - Node.js + Express
