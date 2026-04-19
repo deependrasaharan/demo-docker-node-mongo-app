@@ -29,7 +29,7 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=password
-      - GLIBC_TUNABLES="glibc.cpu.hwcaps=-SHSTK"\
+      - GLIBC_TUNABLES="glibc.cpu.hwcaps=-SHSTK"
     volumes:
       - mongo-data:/data/db # to persist data even if container is deleted
 
