@@ -46,7 +46,7 @@ services:
 
   my-app:
     # image: my-app:1.1
-    image: AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/my-app:1.2
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/my-app:1.2
     ports:
       - "3000:3000"
     environment:
