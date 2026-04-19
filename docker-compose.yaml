@@ -29,7 +29,10 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=password
-      - GLIBC_TUNABLES="glibc.cpu.hwcaps=-SHSTK"
+      - GLIBC_TUNABLES="glibc.cpu.hwcaps=-SHSTK"\
+    volumes:
+      - mongo-data:/data/db # to persist data even if container is deleted
+
   mongo-express:
     image: mongo-express
     ports:
@@ -40,3 +43,17 @@ services:
       - ME_CONFIG_MONGODB_ADMINPASSWORD=password 
     depends_on: # to make sure mongo express starts only after mongodb as it needs that
       - mongo
+
+  my-app:
+    # image: my-app:1.1
+    image: AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/my-app:1.2
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URL=mongodb://admin:password@mongo:27017/?authSource=admin
+
+volumes:
+  mongo-data:
+    driver: local #no need to specify this as local is default driver for volumes
+
+# no need to create network! compose handles that itself! Creates a new docker network every time we use up command and network gets deleted everytime we use down command
